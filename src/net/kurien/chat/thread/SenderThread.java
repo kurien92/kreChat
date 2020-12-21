@@ -1,43 +1,61 @@
 package net.kurien.chat.thread;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.Socket;
 
 public class SenderThread extends Thread {
     private Socket socket;
-    private String text;
 
     public void run() {
         super.run();
 
+        BufferedReader bufferedReader = null;
+        PrintWriter printWriter = null;
+
         try {
-            OutputStream outputStream = socket.getOutputStream();
-            PrintWriter printWriter = new PrintWriter(outputStream);
+            bufferedReader = new BufferedReader(new InputStreamReader(System.in));
+            printWriter = new PrintWriter(socket.getOutputStream());
 
             while(true) {
-                String outputString = "[output, " + socket.getLocalAddress() + ", " + socket.getLocalPort() + "] " + text;
+                String outputString = bufferedReader.readLine();
 
                 printWriter.println(outputString);
 
                 printWriter.flush();
 
-                Thread.sleep(2000);
+                if(outputString.equals("exit")) {
+                    break;
+                }
             }
+
+            bufferedReader.close();
+            printWriter.close();
         } catch(IOException e) {
             e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        } finally {
+            if(socket != null && !socket.isClosed()) {
+                try {
+                    socket.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            if(bufferedReader != null) {
+                try {
+                    bufferedReader.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            if(printWriter != null) {
+                printWriter.close();
+            }
         }
     }
 
     public void setSocket(Socket socket) {
         this.socket = socket;
     }
-
-    public void setText(String text) {
-        this.text = text;
-    }
-
 }
